@@ -7,58 +7,62 @@ endif()
 
 project (libavg_fluids)
 
-if(UNIX)
-    find_package(Boost REQUIRED COMPONENTS python thread)
-    set(INCLUDES ${INCLUDES} ${Boost_INCLUDE_DIRS})
-    set(LIBS ${LIBS} ${Boost_LIBRARIES})
+INCLUDE(FindCUDA)
+IF(CUDA_FOUND)
+
+    find_package(Boost REQUIRED COMPONENTS python thread system)
+        set(INCLUDES ${INCLUDES} ${Boost_INCLUDE_DIRS})
+        set(LIBS ${LIBS} ${Boost_LIBRARIES})
     find_package(LibXml2 REQUIRED)
-    set(INCLUDES ${INCLUDES} ${LIBXML2_INCLUDE_DIR})
-    set(LIBS ${LIBS} ${LIBXML2_LIBRARIES})
-endif(UNIX)
+        set(INCLUDES ${INCLUDES} ${LIBXML2_INCLUDE_DIR})
+        set(LIBS ${LIBS} ${LIBXML2_LIBRARIES})
+    find_package(PythonLibs REQUIRED)
+        set(INCLUDES ${INCLUDES} ${PYTHON_INCLUDE_DIRS})
+        set(LIBS ${LIBS} ${PYTHON_LIBRARIES})
 
-find_package(PythonLibs REQUIRED)
-set(INCLUDES ${INCLUDES} ${PYTHON_INCLUDE_DIRS})
-set(LIBS ${LIBS} ${PYTHON_LIBRARIES})
+    set(INCLUDES ${INCLUDES} ${AVG_PATH}/libavg/src)
 
-set(INCLUDES ${INCLUDES} ${AVG_PATH}/libavg/src)
+    INCLUDE_DIRECTORIES(${CUDA_SDK_ROOT_DIR}/../shared/inc)
+    INCLUDE_DIRECTORIES(${CUDA_SDK_ROOT_DIR}/common/inc)
+    INCLUDE_DIRECTORIES (${INCLUDES})
 
-include_directories (${INCLUDES})
+    set(FLUID_SRC src/FluidNode.cpp src/ProcessThread.cpp)
 
-set(FLUID_SRC src/FluidNode.cpp src/ProcessThread.cpp)
+    add_library(fluidnode MODULE ${FLUID_SRC})
+    SET(LIBRARY_OUTPUT_PATH ${CMAKE_CURRENT_SOURCE_DIR}/plugin/)
+    SET(LIBS ${LIBS} ${AVG_PATH}/libavg/src/wrapper/.libs/avg.so)
 
-add_library(fluidNode MODULE ${FLUID_SRC})
-SET(LIBRARY_OUTPUT_PATH ${CMAKE_CURRENT_SOURCE_DIR}/plugin/)
+    message(INFO:  ${LIBS} )
 
-if(UNIX AND NOT APPLE)
+    SET(CMAKE_CXX_COMPILER_VERSION "4.6.3")
+    SET(CMAKE_C_COMPILER_VERSION "4.6.3")
     set(CXX_FLAGS ${CXX_FLAGS} "-O0 -g -Wall")
-    target_link_libraries (fluidNode ${LIBS} ${AVG_PATH}/libavg/src/wrapper/.libs/avg.so )
-	message(INFO ${LIBS} )
-endif()
 
-if(WIN32)
-    set_target_properties(fluidNode PROPERTIES COMPILE_DEFINITIONS "BOOST_ALL_NO_LIB;AVG_PLUGIN")
-    target_link_libraries (fluidNode ${LIBS} ${AVG_PATH}/libavg/win/Release/avg.lib)
-endif()
+    LINK_DIRECTORIES(${CUDA_SDK_ROOT_DIR}/lib)
+    SET(CUDA_NVCC_FLAGS ${CUDA_NVCC_FLAGS} -arch=sm_20)
+    target_link_libraries (fluidnode ${LIBS} )
 
-if(UNIX)
-	add_custom_command(
-		TARGET fluidNode
-		POST_BUILD
-		COMMAND ${CMAKE_COMMAND}
-		ARGS -E copy ${CMAKE_CFG_INTDIR}/plugin/libfluidNode${CMAKE_SHARED_LIBRARY_SUFFIX}
-        ${CMAKE_CFG_INTDIR}/plugin/Release/fluidNode${CMAKE_SHARED_LIBRARY_SUFFIX}
-		COMMAND ${CMAKE_COMMAND}
-        ARGS -E remove ${CMAKE_CFG_INTDIR}/plugin/libfluidNode${CMAKE_SHARED_LIBRARY_SUFFIX}
-		)
+    if(UNIX)
+        add_custom_command(
+            TARGET fluidnode
+            POST_BUILD
+            COMMAND ${CMAKE_COMMAND}
+            ARGS -E copy ${CMAKE_CFG_INTDIR}/plugin/libfluidnode${CMAKE_SHARED_LIBRARY_SUFFIX}
+            ${CMAKE_CFG_INTDIR}/plugin/fluidnode${CMAKE_SHARED_LIBRARY_SUFFIX}
+            COMMAND ${CMAKE_COMMAND}
+            ARGS -E remove ${CMAKE_CFG_INTDIR}/plugin/libfluidnode${CMAKE_SHARED_LIBRARY_SUFFIX}
+            )
 
-	execute_process(COMMAND python2 -c "import os,libavg; print os.path.dirname(libavg.__file__)"
-		OUTPUT_VARIABLE AVG_LIB_PATH
-		OUTPUT_STRIP_TRAILING_WHITESPACE
-		)
-endif()
+        execute_process(COMMAND python2 -c "import os,libavg; print os.path.dirname(libavg.__file__)"
+            OUTPUT_VARIABLE AVG_LIB_PATH
+            OUTPUT_STRIP_TRAILING_WHITESPACE
+            )
+    endif()
 
-install(TARGETS fluidNode
-	DESTINATION ${CMAKE_CURRENT_SOURCE_DIR}/plugin/
-	)
-set_target_properties(PROPERTIES PREFIX "")
+    install(TARGETS fluidnode
+        DESTINATION ${CMAKE_CURRENT_SOURCE_DIR}/plugin/
+        )
+    set_target_properties(PROPERTIES PREFIX "")
+
+ENDIF(CUDA_FOUND)
 
