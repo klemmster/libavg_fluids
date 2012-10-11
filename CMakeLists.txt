@@ -7,9 +7,7 @@ endif()
 
 project (libavg_fluids)
 
-INCLUDE(FindCUDA)
-IF(CUDA_FOUND)
-
+    find_package(CUDA REQUIRED)
     find_package(Boost REQUIRED COMPONENTS python thread system)
         set(INCLUDES ${INCLUDES} ${Boost_INCLUDE_DIRS})
         set(LIBS ${LIBS} ${Boost_LIBRARIES})
@@ -24,22 +22,28 @@ IF(CUDA_FOUND)
 
     INCLUDE_DIRECTORIES(${CUDA_SDK_ROOT_DIR}/../shared/inc)
     INCLUDE_DIRECTORIES(${CUDA_SDK_ROOT_DIR}/common/inc)
-    INCLUDE_DIRECTORIES (${INCLUDES})
+    INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/src/)
+    INCLUDE_DIRECTORIES(/opt/cuda-toolkit/include)
+    INCLUDE_DIRECTORIES(${INCLUDES})
 
-    set(FLUID_SRC src/FluidNode.cpp src/ProcessThread.cpp)
+    SET(FLUID_SRC src/FluidKernels.cu src/FluidNode.cpp src/ProcessThread.cpp
+        src/CudaDevice.cu src/TestCUDAPBO.cu)
 
-    add_library(fluidnode MODULE ${FLUID_SRC})
+    SET(CMAKE_CXX_COMPILER_VERSION "4.6.3")
+    SET(CMAKE_C_COMPILER_VERSION "4.6.3")
+    SET(CXX_FLAGS ${CXX_FLAGS} "-O0 -g -Wall")
+    SET(CUDA_NVCC_FLAGS ${CUDA_NVCC_FLAGS} -arch=sm_20)
+
+
     SET(LIBRARY_OUTPUT_PATH ${CMAKE_CURRENT_SOURCE_DIR}/plugin/)
     SET(LIBS ${LIBS} ${AVG_PATH}/libavg/src/wrapper/.libs/avg.so)
 
     message(INFO:  ${LIBS} )
 
-    SET(CMAKE_CXX_COMPILER_VERSION "4.6.3")
-    SET(CMAKE_C_COMPILER_VERSION "4.6.3")
-    set(CXX_FLAGS ${CXX_FLAGS} "-O0 -g -Wall")
-
     LINK_DIRECTORIES(${CUDA_SDK_ROOT_DIR}/lib)
-    SET(CUDA_NVCC_FLAGS ${CUDA_NVCC_FLAGS} -arch=sm_20)
+    LINK_DIRECTORIES(/opt/cuda-toolkit/lib64)
+
+    CUDA_add_library(fluidnode SHARED ${FLUID_SRC})
     target_link_libraries (fluidnode ${LIBS} )
 
     if(UNIX)
@@ -63,6 +67,4 @@ IF(CUDA_FOUND)
         DESTINATION ${CMAKE_CURRENT_SOURCE_DIR}/plugin/
         )
     set_target_properties(PROPERTIES PREFIX "")
-
-ENDIF(CUDA_FOUND)
 

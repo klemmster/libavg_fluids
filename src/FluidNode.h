@@ -40,7 +40,6 @@ private:
     TestCUDAPBO *m_pCUDAPBO;
     GLTexturePtr m_pTex;
     bool m_isInitialized;
-    BitmapPtr m_testBitmap;
 };
 
 } /* avg */

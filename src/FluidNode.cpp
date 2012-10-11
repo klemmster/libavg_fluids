@@ -21,13 +21,11 @@ FluidNode::FluidNode(const ArgList& Args):
     m_isInitialized(false)
 {
     Args.setMembers(this);
-    m_testBitmap = BitmapPtr(new Bitmap("gradient.png"));
     ObjectCounter::get()->incRef(&typeid(*this));
     Player::get()->registerPlaybackEndListener(this);
 }
 
 FluidNode::~FluidNode(){
-    std::cout << "Delete FluidNode\n";
     stop();
 }
 
@@ -56,11 +54,11 @@ void FluidNode::onPlaybackEnd()
 void FluidNode::init(){
     m_pcudaDevice = new CudaDevice();
     IntPoint size(getSize().x, getSize().y);
-    m_pTex = GLTexturePtr(new GLTexture(size, m_testBitmap->getPixelFormat(), false));
+    m_pTex = GLTexturePtr(new GLTexture(size, I8, false));
     m_pTex->enableStreaming();
-    getSurface()->create(m_testBitmap->getPixelFormat(), m_pTex);
+    getSurface()->create(I8, m_pTex);
     newSurface();
-    m_PBO = new PBO(size, m_testBitmap->getPixelFormat(), GL_DYNAMIC_DRAW);
+    m_PBO = new PBO(size, I8, GL_DYNAMIC_DRAW);
     m_PBO->activate();
     m_pCUDAPBO = new TestCUDAPBO();
     m_pCUDAPBO->setPBO(m_PBO->getID());
@@ -70,12 +68,8 @@ void FluidNode::preRender(const VertexArrayPtr& pVA, bool bIsParentActive,
         float parentEffectiveOpacity){
     Node::preRender(pVA, bIsParentActive, parentEffectiveOpacity);
     if(m_isInitialized){
-        //std::cout << m_PBO->getID() << "\n";
-        //m_PBO->lock();
-        //m_PBO->moveBmpToTexture(m_testBitmap, *m_pTex);
-        m_PBO->moveToTexture(*m_pTex);
         m_pCUDAPBO->step();
-        //m_PBO->unlock();
+        m_PBO->moveToTexture(*m_pTex);
         renderFX(getSize(), Pixel32(255, 255, 255, 255), false, false);
         calcVertexArray(pVA);
     }
@@ -84,7 +78,6 @@ void FluidNode::preRender(const VertexArrayPtr& pVA, bool bIsParentActive,
 void FluidNode::render(){
     if(!m_isInitialized){
         Player *player = Player::get();
-        std::cout << "Frame: " << player->getFrameTime() << "\n";
         if(player->getFrameTime() > 50){
         m_isInitialized = true;
         init();

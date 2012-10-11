@@ -9,10 +9,10 @@ void testPBO( char* dst){
     unsigned int x = blockIdx.x*blockDim.x + threadIdx.x;
     unsigned int y = blockIdx.y*blockDim.y + threadIdx.y;
 
-    if(x > 0 && x < 512)
-        if(y > 0  && y < 512){
-        int index = y*512*4 + x;
-            dst[index] = (char)128;
+    if(x >= 0 && x < 512)
+        if(y >= 0  && y < 512){
+        int index = y*512 + x;
+            dst[index] = (char)index%254;
         }
 }
 
@@ -37,8 +37,10 @@ void TestCUDAPBO::step(){
     std::cout << m_size << "\n";
     */
 
+    size_t blocksW = (size_t)ceilf( 512 / 16.0f);
+    size_t blocksH = (size_t)ceilf( 512 / 16.0f);
     dim3 dimBlock(16, 16, 1);
-    dim3 dimGrid(1, 1, 1);
+    dim3 dimGrid(blocksW, blocksH, 1);
     testPBO<<< dimGrid, dimBlock >>>((char*)m_devPtr);
     checkCudaErrors(cudaGetLastError());
     cudaGraphicsUnmapResources(1, &m_cuPBO);
