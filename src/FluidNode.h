@@ -7,13 +7,15 @@
 
 #include <base/IPlaybackEndListener.h>
 
+
 #include <player/RasterNode.h>
 #include <graphics/PBO.h>
 #include <graphics/GLTexture.h>
 #include <graphics/Bitmap.h>
 
 #include "CudaDevice.h"
-#include "TestCUDAPBO.h"
+
+#include "FluidKernels.h"
 
 namespace avg
 {
@@ -37,7 +39,7 @@ private:
     //Load and initialize the first cuda capable device
     CudaDevice *m_pcudaDevice;
     PBO *m_PBO;
-    TestCUDAPBO *m_pCUDAPBO;
+    FluidField *m_pFluidField;
     GLTexturePtr m_pTex;
     bool m_isInitialized;
 };

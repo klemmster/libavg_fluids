@@ -26,8 +26,8 @@ project (libavg_fluids)
     INCLUDE_DIRECTORIES(/opt/cuda-toolkit/include)
     INCLUDE_DIRECTORIES(${INCLUDES})
 
-    SET(FLUID_SRC src/FluidKernels.cu src/FluidNode.cpp src/ProcessThread.cpp
-        src/CudaDevice.cu src/TestCUDAPBO.cu)
+    SET(FLUID_SRC src/FluidKernels.h src/FluidKernels.cu src/FluidNode.cpp src/ProcessThread.cpp
+        src/CudaDevice.cu src/CudaBuffer.cu)
 
     SET(CMAKE_CXX_COMPILER_VERSION "4.6.3")
     SET(CMAKE_C_COMPILER_VERSION "4.6.3")

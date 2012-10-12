@@ -1,0 +1,3 @@
+#define WIDTH 512
+#define HEIGHT 512
+#define DEFAULTPROFILINGFRAMES 5

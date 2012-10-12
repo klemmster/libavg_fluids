@@ -7,7 +7,6 @@
 #include <player/Player.h>
 #include <graphics/Pixel8.h>
 
-
 using namespace boost::python;
 
 char fluidNodeName[] = "FluidNode";
@@ -33,8 +32,8 @@ void FluidNode::stop(){
     if (m_pcudaDevice){
         delete m_pcudaDevice;
     }
-    if (m_pCUDAPBO){
-        delete m_pCUDAPBO;
+    if (m_pFluidField){
+        delete m_pFluidField;
     }
     if (m_PBO){
         delete m_PBO;
@@ -60,15 +59,15 @@ void FluidNode::init(){
     newSurface();
     m_PBO = new PBO(size, I8, GL_DYNAMIC_DRAW);
     m_PBO->activate();
-    m_pCUDAPBO = new TestCUDAPBO();
-    m_pCUDAPBO->setPBO(m_PBO->getID());
+    m_pFluidField = new FluidField();
+    m_pFluidField->setPBO(m_PBO->getID());
 }
 
 void FluidNode::preRender(const VertexArrayPtr& pVA, bool bIsParentActive,
         float parentEffectiveOpacity){
     Node::preRender(pVA, bIsParentActive, parentEffectiveOpacity);
     if(m_isInitialized){
-        m_pCUDAPBO->step();
+        m_pFluidField->step();
         m_PBO->moveToTexture(*m_pTex);
         renderFX(getSize(), Pixel32(255, 255, 255, 255), false, false);
         calcVertexArray(pVA);
